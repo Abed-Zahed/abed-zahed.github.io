@@ -477,11 +477,11 @@
   &#8659;&nbsp; Download CV
 </a>
 
-<!-- Page break markers: find natural gap between content blocks (hidden in print) -->
+<!-- Page break markers: align gap below both columns' natural break points (hidden in print) -->
 <script>
 (function() {
   var GAP    = 44;
-  var PAGE_H = 273 * (96 / 25.4); // A4 content height (minus 12mm top + 12mm bottom print margins)
+  var PAGE_H = 273 * (96 / 25.4); // A4 content height minus print margins
 
   function offsetY(el) {
     var y = 0;
@@ -489,25 +489,41 @@
     return y;
   }
 
-  document.body.style.position = 'relative';
-  var blocks = document.querySelector('.col-left').querySelectorAll('.section-title, .role-block');
-
-  for (var i = 0; i < blocks.length; i++) {
-    if (offsetY(blocks[i]) > PAGE_H) {
-      var el     = blocks[i];
-      var gapTop = offsetY(el) - 2;
-      // Push the first page-2 element down to make room for the visual gap
-      el.style.marginTop = ((parseInt(window.getComputedStyle(el).marginTop) || 0) + GAP) + 'px';
-      el.classList.add('pg-pushed');
-      // Insert the visual gap in that created space
-      var m = document.createElement('div');
-      m.className  = 'pg-break no-print';
-      m.style.top  = gapTop + 'px';
-      m.innerHTML  = '<span class="pg-break-label">Page · 2</span>';
-      document.body.appendChild(m);
-      break;
+  function firstPastPage(col, sel) {
+    var nodes = col.querySelectorAll(sel);
+    for (var i = 0; i < nodes.length; i++) {
+      if (offsetY(nodes[i]) > PAGE_H) return nodes[i];
     }
+    return null;
   }
+
+  function push(el, by) {
+    if (!el || by <= 0) return;
+    el.style.marginTop = ((parseInt(window.getComputedStyle(el).marginTop) || 0) + by) + 'px';
+    el.classList.add('pg-pushed');
+  }
+
+  document.body.style.position = 'relative';
+  var colL = document.querySelector('.col-left');
+  var colR = document.querySelector('.col-right');
+
+  var lEl = firstPastPage(colL, '.section-title, .role-block');
+  var rEl = firstPastPage(colR, '.section-title, .achievement, .skill-cat');
+
+  if (!lEl && !rEl) return; // fits on one page
+
+  var lY   = lEl ? offsetY(lEl) : PAGE_H;
+  var rY   = rEl ? offsetY(rEl) : PAGE_H;
+  var bandY = Math.max(lY, rY); // band sits below whichever column breaks later
+
+  push(lEl, bandY - lY + GAP);
+  push(rEl, bandY - rY + GAP);
+
+  var m = document.createElement('div');
+  m.className = 'pg-break no-print';
+  m.style.top = bandY + 'px';
+  m.innerHTML = '<span class="pg-break-label">Page · 2</span>';
+  document.body.appendChild(m);
 })();
 </script>
 
