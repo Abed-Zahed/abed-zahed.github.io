@@ -230,6 +230,7 @@
     .header { background: #0F2044 !important; }
     .role-block, .achievement { break-inside: avoid; page-break-inside: avoid; }
     .no-print { display: none !important; }
+    .pg-pushed { margin-top: 0 !important; }
     @page {
       size: A4;
       margin: 12mm 14mm;   /* standard document margins, no need to change in dialog */
@@ -247,12 +248,12 @@
     border-radius: 6px;
     font-size: 9pt;
     font-family: Calibri, 'Segoe UI', Arial, sans-serif;
-    cursor: pointer;
     box-shadow: 0 2px 10px rgba(0,0,0,0.22);
-    user-select: none;
     letter-spacing: 0.03em;
     z-index: 100;
     transition: background 0.15s;
+    text-decoration: none;
+    display: inline-block;
   }
   #pdf-btn:hover { background: #1D4ED8; }
 
@@ -471,23 +472,41 @@
 
 </div>
 
-<!-- Save as PDF button (hidden in print) -->
-<div id="pdf-btn" class="no-print" onclick="window.print()" title="Ctrl+P to save as PDF">
-  &#128196;&nbsp; Save as PDF
-</div>
+<!-- Download CV button (hidden in print) -->
+<a id="pdf-btn" class="no-print" href="cv.pdf" download="Abed_Zahed_CV.pdf">
+  &#8659;&nbsp; Download CV
+</a>
 
-<!-- Page break markers injected by JS (hidden in print) -->
+<!-- Page break markers: find natural gap between content blocks (hidden in print) -->
 <script>
 (function() {
-  var PAGE_H_PX = 273 * (96 / 25.4); // 297mm A4 minus 12mm top + 12mm bottom margins
+  var GAP    = 44;
+  var PAGE_H = 273 * (96 / 25.4); // A4 content height (minus 12mm top + 12mm bottom print margins)
+
+  function offsetY(el) {
+    var y = 0;
+    while (el && el !== document.body) { y += el.offsetTop; el = el.offsetParent; }
+    return y;
+  }
+
   document.body.style.position = 'relative';
-  var total = document.body.scrollHeight;
-  for (var pg = 2, y = PAGE_H_PX; y < total - 40; y += PAGE_H_PX, pg++) {
-    var m = document.createElement('div');
-    m.className = 'pg-break no-print';
-    m.style.top = Math.round(y) + 'px';
-    m.innerHTML = '<span class="pg-break-label">Page · ' + pg + '</span>';
-    document.body.appendChild(m);
+  var blocks = document.querySelector('.col-left').querySelectorAll('.section-title, .role-block');
+
+  for (var i = 0; i < blocks.length; i++) {
+    if (offsetY(blocks[i]) > PAGE_H) {
+      var el     = blocks[i];
+      var gapTop = offsetY(el) - 2;
+      // Push the first page-2 element down to make room for the visual gap
+      el.style.marginTop = ((parseInt(window.getComputedStyle(el).marginTop) || 0) + GAP) + 'px';
+      el.classList.add('pg-pushed');
+      // Insert the visual gap in that created space
+      var m = document.createElement('div');
+      m.className  = 'pg-break no-print';
+      m.style.top  = gapTop + 'px';
+      m.innerHTML  = '<span class="pg-break-label">Page · 2</span>';
+      document.body.appendChild(m);
+      break;
+    }
   }
 })();
 </script>
